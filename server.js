@@ -40,7 +40,13 @@ app.post("/api/workouts",({body},res) => {
 });
 
 app.put("/api/workouts/:id", (req,res) => {
-
+    db.Workout.findOneAndUpdate({_id:mongojs.ObjectId(req.params.id)},{ $push: { exercises: req.body } }, { new: true })
+    .then(dbWorkout => {
+        res.json(dbWorkout)
+    })
+    .catch(err => {
+        res.json(err)
+    })
 });
 
 app.get("/api/workouts/range", (req,res)=>{

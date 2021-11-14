@@ -15,7 +15,7 @@ const WorkoutSchema = new Schema({
         type:String,
         required:"Please let us know which exercise you did"
     },
-    duration:{
+    totalDuration:{
         type:Number
     },
     weight:{
