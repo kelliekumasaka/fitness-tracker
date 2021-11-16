@@ -1,6 +1,7 @@
 const express = require("express");
 const logger = require("morgan");
 const mongoose = require("mongoose");
+const path = require('path')
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,8 +19,17 @@ app.use(express.static("public"));
 
 mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/workout", { useNewUrlParser: true });
 
+app.get('/stats',(req,res) => {
+    res.sendFile(path.join(__dirname,'public/stats.html'))
+});
+
+app.get('/exercise',(req,res) => {
+    res.sendFile(path.join(__dirname,'public/exercise.html'))
+});
+
 app.get("/api/workouts", (req,res) => {
-    db.Workout.find({})    
+    db.Workout.find({})
+    .populate('exercises')  
     .then(dbWorkout => {
         res.json(dbWorkout);
     })
@@ -40,17 +50,28 @@ app.post("/api/workouts",({body},res) => {
 });
 
 app.put("/api/workouts/:id", (req,res) => {
-    db.Workout.findOneAndUpdate({_id:mongojs.ObjectId(req.params.id)},{ $push: { exercises: req.body } }, { new: true })
-    .then(dbWorkout => {
-        res.json(dbWorkout)
-    })
-    .catch(err => {
-        res.json(err)
+    db.Exercise.create(req.body)
+    .then(dbExercise=>{
+        db.Workout.findByIdAndUpdate(mongoose.Types.ObjectId(req.params.id),{$push:{exercises:dbExercise}},{new:true})
+        .then(dbWorkout => {
+            console.log(dbWorkout)
+            res.json(dbWorkout);
+        })
+        .catch(err => {
+            res.json(err)
+        })
     })
 });
 
 app.get("/api/workouts/range", (req,res)=>{
-
+    db.Workout.find({})
+    .populate("exercises")
+    .then(dbWorkout => {
+        res.json(dbWorkout)
+    })
+    .catch(err => {
+        res.json(err);
+    });
 });
 
 app.listen(PORT, () => {
