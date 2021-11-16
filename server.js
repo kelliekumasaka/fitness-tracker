@@ -28,14 +28,19 @@ app.get('/exercise',(req,res) => {
 });
 
 app.get("/api/workouts", (req,res) => {
-    db.Workout.find({})
-    .populate('exercises')  
-    .then(dbWorkout => {
-        res.json(dbWorkout);
+    db.Workout.aggregate([
+        {
+            $addFields:{
+                totalDuration:{$sum: '$exercises.duration'}
+            }
+        }
+    ])
+    .then(result => {
+        res.json(result)
     })
     .catch(err => {
-        res.json(err);
-    });
+        console.log(err)
+    })
 });
 
 app.post("/api/workouts",({body},res) => {
@@ -50,28 +55,32 @@ app.post("/api/workouts",({body},res) => {
 });
 
 app.put("/api/workouts/:id", (req,res) => {
-    db.Exercise.create(req.body)
-    .then(dbExercise=>{
-        db.Workout.findByIdAndUpdate(mongoose.Types.ObjectId(req.params.id),{$push:{exercises:dbExercise}},{new:true})
-        .then(dbWorkout => {
-            console.log(dbWorkout)
-            res.json(dbWorkout);
-        })
-        .catch(err => {
-            res.json(err)
-        })
+    db.Workout.findByIdAndUpdate(req.params.id,{$push:{exercises:req.body}},{new:true,runValidators:true})
+    .then(dbWorkout => {
+        console.log(dbWorkout)
+        res.json(dbWorkout);
+    })
+    .catch(err => {
+        res.json(err)
     })
 });
 
 app.get("/api/workouts/range", (req,res)=>{
-    db.Workout.find({})
-    .populate("exercises")
-    .then(dbWorkout => {
-        res.json(dbWorkout)
+    db.Workout.aggregate([
+        {
+            $addFields:{
+                totalDuration:{$sum: '$exercises.duration'}
+            }
+        }
+    ])
+    .sort({day: -1})
+    .limit(7)
+    .then(result => {
+        res.json(result)
     })
     .catch(err => {
-        res.json(err);
-    });
+        console.log(err)
+    })
 });
 
 app.listen(PORT, () => {
